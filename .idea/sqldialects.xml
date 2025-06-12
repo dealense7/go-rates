@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/cmd/parser/gas/gas.go" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/database/migrations/20250427113800_create_gas_providers_table.sql" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/database/migrations/20250503054638_create_gas_rates_table.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/database/seeders/gas_seeder.go" dialect="GenericSQL" />
+    <file url="file://$PROJECT_DIR$/database/seeders/store_seeder.go" dialect="GenericSQL" />
+  </component>
+</project>

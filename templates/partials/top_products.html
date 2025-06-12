@@ -1,0 +1,98 @@
+{{ define "top-products" }}
+<section>
+    <div class="w-11/12 md:w-8/12 mx-auto px-4 mx-auto ">
+        <h2 class="col-span-6 text-xs font-medium">ფასდაკლებული პროდუქტი</h2>
+        <p class="col-span-6 text-xx font-normal text-gray-500">ყველაზე დიდი განსხვავება ფასებში</p>
+    </div>
+    <div
+            class="w-11/12 md:w-8/12 mx-auto px-4 mx-auto grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3"
+            x-data="{
+                items: [],
+                filteredItems: [],
+                filterData(){
+                    this.filteredItems = this.items.filter(item => item)
+                }
+            }"
+            x-init="items = {{ . }}; filterData();">
+
+        <template x-for="item in filteredItems" :key="item.id">
+            <div class="col-span-1">
+                <!-- Image and Unit -->
+                <div class="bg-white w-full h-[150px] relative block p-3 cursor-pointer"  x-on:click="fetchPrices(item.id)">
+                    <img :src="'static/' + item.image" loading="lazy" class="object-contain w-full h-full" />
+                    <span
+                            x-text="(() => {
+                              const vol = item.volume.trim();
+                              const num = parseFloat(vol.replace(/[a-zA-Zა-ჰ]+/, '').trim());
+                              if (vol.includes('ml')) {
+                                return num >= 1000 ? (num / 1000).toFixed(2) + ' ლ' : num + ' მლ';
+                              }
+                              if (vol.includes('g')) {
+                                return num >= 1000 ? (num / 1000).toFixed(2) + ' კგ' : num + ' გრ';
+                              }
+                              if (vol.includes('pcs')) {
+                                return num + 'x';
+                              }
+                              return vol;
+                            })()"
+                            :class="(() => {
+                              const vol = item.volume.trim();
+                              if (vol.includes('ml')) return 'bg-green-600 text-white';
+                              if (vol.includes('g')) return 'bg-gray-700 text-white';
+                              if (vol.includes('pcs')) return 'bg-gray-700 text-white';
+                              return '';
+                            })()"
+                            class="px-1 py-0.5 text-xx absolute top-1.5 right-1.5 font-normal rounded"
+                    ></span>
+                </div>
+
+                <!-- Name And Price [START] -->
+                <div class="w-full my-2 cursor-pointer"  x-on:click="fetchPrices(item.id)">
+                    <!-- Product and Company Name [START] -->
+                    <span x-text="item.company" class="text-xx mb-0.5 overflow-hidden text-ellipsis line-clamp-1 font-medium text-gray-500"></span>
+                    <span x-text="item.name" class="text-xs overflow-hidden text-ellipsis line-clamp-1 font-normal text-gray-800"></span>
+                    <!-- Product and Company Name [END] -->
+
+                    <div class="flex items-center justify-between mt-1">
+                        <!-- Min.Max Price [START] -->
+                        <div>
+                            <!-- Min price -->
+                            <span x-text="(item.min_price/100).toFixed(2)" class="text-base font-bold text-gray-900"></span>
+
+                            <!-- Max price if exists -->
+                            <template x-if="(item.max_price - item.min_price) > 0.01">
+                                <span x-text="(item.max_price/100).toFixed(2)" class="text-sm font-normal text-gray-700 line-through"></span>
+                            </template>
+                        </div>
+
+                        <!-- Min.Max Price [END] -->
+
+                        <!-- Sale [START] -->
+                        <template x-if="(item.max_price - item.min_price) > 0.01">
+                            <span
+                                    x-text="(((item.max_price - item.min_price) / item.max_price) * 100).toFixed(0) + '%'"
+                                    :class="() => {
+                                      const percentage = ((item.max_price - item.min_price) / item.max_price) * 100;
+
+                                      if (percentage > 70) {
+                                        return 'text-red-600 font-medium';
+                                      } else if (percentage > 50) {
+                                        return 'text-green-600 font-medium';
+                                      } else {
+                                        return 'text-gray-700 font-normal';
+                                      }
+                                    }"
+                                    class="text-xs font-normal"
+                            ></span>
+
+                        </template>
+                        <!-- Sale [END] -->
+                    </div>
+                </div>
+                <!-- Name And Price [END] -->
+
+            </div>
+        </template>
+    </div>
+</section>
+{{ end }}

@@ -1,0 +1,53 @@
+{{ define "gas-rates" }}
+<div
+        x-data="{
+        types: ['რეგულარი', 'პრემიუმი', 'სუპერი', 'დიზელი', 'გაზი'],
+        chosenType: 'რეგულარი',
+        minPrice: 0,
+        maxPrice: 0,
+        items: [],
+        filteredItems: [],
+        filterData(){
+            this.filteredItems = this.items.filter(item => item.tag.includes(this.chosenType))
+            this.filteredItems.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+
+            this.minPrice = this.filteredItems[0].price;
+            this.maxPrice = this.filteredItems.at(-1).price;
+        }
+    }"
+        x-init="items = {{ . }}; filterData();"
+>
+    <div class="">
+        <div class="w-full w-11/12 md:w-8/12  mx-auto p-2 items-center gap-5 grid grid-cols-5">
+            <div class="flex items-center gap-3">
+                <template x-for="type in types" :key="type">
+                    <span x-text="type" x-on:click="chosenType = type; filterData();" :class="type === chosenType  ? 'bg-gray-700 text-white' : ''" class="hover:bg-gray-700 duration-100 transition-colors hover:text-white cursor-pointer border p-1 px-3 font-normal rounded-md text-xx text-center w-max"></span>
+                </template>
+            </div>
+            <div class="col-span-5 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-2">
+                <template x-for="item in filteredItems" :key="item.id">
+                    <div class="card col-span-1 flex rounded-md p-2 border items-center justify-start gap-2 relative">
+                        <div class="grid text-xx w-7 h-7">
+                            <img :src="item.providerLogo" class="object-contain">
+                        </div>
+                        <div class="grid font-normal text-xs">
+                            <small x-text="item.name" class="text-gray-800"></small>
+                            <div class="flex items-center gap-1 w-max">
+                                <span>₾<span x-text="(item.price/100).toFixed(2)" class="text-sm text-gray-950 font-medium"></span></span>
+                                <template x-if="(maxPrice - item.price) > 0">
+                                    <span x-text="'-' + ((maxPrice - item.price)/100).toFixed(2)" class="text-[9.5px] font-normal text-gray-500"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <span class="absolute right-1 top-1" x-show="item.price === minPrice">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#FF0800" class="bi bi-stars" viewBox="0 0 16 16">
+                              <path d="M7.657 6.247c.11-.33.576-.33.686 0l.645 1.937a2.89 2.89 0 0 0 1.829 1.828l1.936.645c.33.11.33.576 0 .686l-1.937.645a2.89 2.89 0 0 0-1.828 1.829l-.645 1.936a.361.361 0 0 1-.686 0l-.645-1.937a2.89 2.89 0 0 0-1.828-1.828l-1.937-.645a.361.361 0 0 1 0-.686l1.937-.645a2.89 2.89 0 0 0 1.828-1.828zM3.794 1.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387A1.73 1.73 0 0 0 4.593 5.69l-.387 1.162a.217.217 0 0 1-.412 0L3.407 5.69A1.73 1.73 0 0 0 2.31 4.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387A1.73 1.73 0 0 0 3.407 2.31zM10.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732L9.1 2.137a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+                            </svg>
+                        </span>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+{{ end }}

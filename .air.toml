@@ -1,0 +1,21 @@
+root = "."
+tmp_dir = "tmp"
+
+[run]
+full_bin = "GIN_MODE=release ./tmp/main" # <-- Set variable here
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_dir = ["assets", "tmp", "vendor", "frontend/node_modules"]
+include_dir = []
+exclude_file = []
+
+
+[build]
+cmd = "go build -o tmp/main cmd/main.go"
+bin = "tmp/main"
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_dir = ["assets", "tmp", "vendor"]
+include_dir = ["templates"]
+delay = 200
+
+[log]
+time = true

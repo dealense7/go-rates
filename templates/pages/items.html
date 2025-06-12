@@ -1,0 +1,193 @@
+{{ define "items" }}
+{{ template "base" . }}
+{{ end }}
+
+{{ define "items-content" }}
+<!--<h1>Welcome, {{ .User }}</h1>-->
+<section
+        x-data="{
+        prices: [],
+        maxPrice: 0,
+        image: '',
+        title: '',
+        companyName: '',
+        open: false,
+        async fetchPrices(id) {
+            this.maxPrice = 0;
+            this.prices = [];
+            try {
+                const response = await fetch('/prices/' + id);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                this.prices = JSON.parse(data.prices).sort((a, b) => a.price - b.price);
+                this.image = data.image
+                this.title = data.name
+                this.companyName = data.company
+                this.maxPrice = this.prices.at(-1).price;
+            } catch (error) {
+                console.error('Error fetching prices:', error);
+            }
+            this.open = true;
+        }
+    }"
+>
+    {{ template "product-price-modal" }}
+    <section>
+        <div
+                class="w-11/12 md:w-8/12 mx-auto px-4 mx-auto grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3"
+                x-data="{
+                items: [],
+                filteredItems: [],
+                filterData(){
+                    this.filteredItems = this.items.filter(item => item)
+                }
+            }"
+                x-init="items = {{ .Items }}; filterData();">
+
+            <template x-for="item in filteredItems" :key="item.id">
+                <div class="col-span-1">
+                    <!-- Image and Unit -->
+                    <div class="bg-white w-full h-[150px] relative block p-3 cursor-pointer"  x-on:click="fetchPrices(item.id)">
+                        <img :src="'static/' + item.image" loading="lazy" class="object-contain w-full h-full" />
+                        <span
+                                x-text="(() => {
+                              const vol = item.volume.trim();
+                              const num = parseFloat(vol.replace(/[a-zA-Zა-ჰ]+/, '').trim());
+                              if (vol.includes('ml')) {
+                                return num >= 1000 ? (num / 1000).toFixed(2) + ' ლ' : num + ' მლ';
+                              }
+                              if (vol.includes('g')) {
+                                return num >= 1000 ? (num / 1000).toFixed(2) + ' კგ' : num + ' გრ';
+                              }
+                              if (vol.includes('pcs')) {
+                                return num + 'x';
+                              }
+                              return vol;
+                            })()"
+                                :class="(() => {
+                              const vol = item.volume.trim();
+                              if (vol.includes('ml')) return 'bg-green-600 text-white';
+                              if (vol.includes('g')) return 'bg-gray-700 text-white';
+                              if (vol.includes('pcs')) return 'bg-gray-700 text-white';
+                              return '';
+                            })()"
+                                class="px-1 py-0.5 text-xx absolute top-1.5 right-1.5 font-normal rounded"
+                        ></span>
+                    </div>
+
+                    <!-- Name And Price [START] -->
+                    <div class="w-full my-2 cursor-pointer"  x-on:click="fetchPrices(item.id)">
+                        <!-- Product and Company Name [START] -->
+                        <span x-text="item.company" class="text-xx mb-0.5 overflow-hidden text-ellipsis line-clamp-1 font-medium text-gray-500"></span>
+                        <span x-text="item.name" class="text-xs overflow-hidden text-ellipsis line-clamp-1 font-normal text-gray-800"></span>
+                        <!-- Product and Company Name [END] -->
+
+                        <div class="flex items-center justify-between mt-1">
+                            <!-- Min.Max Price [START] -->
+                            <div>
+                                <!-- Min price -->
+                                <span x-text="(item.min_price/100).toFixed(2)" class="text-base font-bold text-gray-900"></span>
+
+                                <!-- Max price if exists -->
+                                <template x-if="(item.max_price - item.min_price) > 0.01">
+                                    <span x-text="(item.max_price/100).toFixed(2)" class="text-sm font-normal text-gray-700 line-through"></span>
+                                </template>
+                            </div>
+
+                            <!-- Min.Max Price [END] -->
+
+                            <!-- Sale [START] -->
+                            <template x-if="(item.max_price - item.min_price) > 0.01">
+                            <span
+                                    x-text="(((item.max_price - item.min_price) / item.max_price) * 100).toFixed(0) + '%'"
+                                    :class="() => {
+                                      const percentage = ((item.max_price - item.min_price) / item.max_price) * 100;
+
+                                      if (percentage > 70) {
+                                        return 'text-red-600 font-medium';
+                                      } else if (percentage > 50) {
+                                        return 'text-green-600 font-medium';
+                                      } else {
+                                        return 'text-gray-700 font-normal';
+                                      }
+                                    }"
+                                    class="text-xs font-normal"
+                            ></span>
+
+                            </template>
+                            <!-- Sale [END] -->
+                        </div>
+                    </div>
+                    <!-- Name And Price [END] -->
+
+                </div>
+            </template>
+        </div>
+    </section>
+
+</section>
+
+<div class="w-11/12 md:w-8/12 mx-auto px-4 mx-auto"
+     x-data="{
+        totalItems: 0,
+        offset: 30,
+        page: 0,
+        currentPage() {
+            const p = parseInt(new URLSearchParams(window.location.search).get('page'));
+            this.page = isNaN(p) || p < 1 ? 1 : p;s
+        },
+     }"
+     x-init="totalItems = {{.totalItems}}; currentPage(); ">
+
+    <div class="flex flex-1 items-center justify-between w-full">
+        <div class="hidden lg:block">
+            <p class="text-sm text-gray-700">
+                Showing
+                <span class="font-medium" x-text="(page * offset) - offset">1</span>
+                to
+                <span class="font-medium" x-text="page * offset"></span>
+                of
+                <span class="font-medium" x-text="totalItems"></span>
+                results
+            </p>
+        </div>
+        <div class="block lg:hidden">
+        </div>
+
+        <div>
+            <nav class="isolate inline-flex -space-x-px rounded-md shadow-xs" aria-label="Pagination">
+                <a href="/items?page=1" :class="(page === 1) ? 'font-bold text-gray-900' : '' " class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-500 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0">1</a>
+                <template x-if="page < 3">
+                    <div class="flex items-center">
+                        <a href="/items?page=2" :class="(page === 2) ? 'font-bold text-gray-900' : '' " class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-500 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0">2</a>
+                        <a href="/items?page=3" :class="(page === 3) ? 'font-bold text-gray-900' : '' " class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-500 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0">3</a>
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-700 ring-1 ring-gray-300 ring-inset focus:outline-offset-0">...</span>
+                    </div>
+                </template>
+
+                <template x-if="3 <= page && page <= (Math.floor(totalItems/offset) - 2)">
+                    <div class="flex items-center">
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-700 ring-1 ring-gray-300 ring-inset focus:outline-offset-0">...</span>
+
+                        <a :href="'/items?page=' + (page-1)" class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-500 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0" x-text="page-1">2</a>
+                        <a :href="'/items?page=' + page" class="relative inline-flex items-center px-4 py-2 text-sm font-bold text-gray-900 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0" x-text="page">2</a>
+                        <a :href="'/items?page=' + (page+1)" class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-500 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0" x-text="page+1">2</a>
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-700 ring-1 ring-gray-300 ring-inset focus:outline-offset-0">...</span>
+                    </div></template>
+                </template>
+
+
+                <template x-if="page > (Math.floor(totalItems/offset) - 2)">
+                    <div class="flex items-center">
+                        <span class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-700 ring-1 ring-gray-300 ring-inset focus:outline-offset-0">...</span>
+                        <a :href="'/items?page=' + (Math.floor(totalItems/offset) - 2)" :class="(page === (Math.floor(totalItems/offset) - 2)) ? 'font-bold text-gray-900' : '' "   class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-500 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0" x-text="Math.floor(totalItems/offset) - 2">2</a>
+                        <a :href="'/items?page=' + (Math.floor(totalItems/offset) - 1)" :class="(page === (Math.floor(totalItems/offset) - 1)) ? 'font-bold text-gray-900' : '' "  class="relative inline-flex items-center px-4 py-2 text-sm font-normal text-gray-500 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0" x-text="Math.floor(totalItems/offset) - 1">3</a>
+                    </div>
+                </template>
+                <a :href="'/items?page=' + Math.floor(totalItems/offset) " :class="(page === Math.floor(totalItems/offset)) ? 'font-bold text-gray-900' : '' "   class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-500 ring-1 ring-gray-300 ring-inset hover:bg-gray-50 focus:z-20 focus:outline-offset-0" x-text="Math.floor(totalItems/offset)"></a>
+            </nav>
+        </div>
+    </div>
+</div>
+
+{{ end }}

@@ -1,0 +1,24 @@
+{
+  "name": "go-rate-app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "tailwind": "npx tailwindcss -i ./src/app.css -o ./static/app.css --watch --minify",
+    "esbuild": "npx esbuild src/app.js --bundle --outfile=static/app.js --watch",
+    "copy:fonts": "cp -R ./src/fonts ./static/",
+    "copy:images": "cp -R ./src/img ./static/",
+    "dev": "npm run copy:fonts && npm run copy:images && npx concurrently \"npm run tailwind\" \"npm run esbuild\"",
+    "build:css": "npx tailwindcss       -c ./tailwind.config.js       -i ./src/app.css       -o ./static/css/app.css       --watch       --verbose"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "alpinejs": "^3.14.8",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
+    "swiper": "^11.2.8",
+    "tailwindcss": "3.3.3"
+  }
+}

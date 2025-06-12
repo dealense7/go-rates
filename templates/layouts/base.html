@@ -1,0 +1,29 @@
+{{ define "base" }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ .Title }} | MyApp</title>
+    <script src="/static/app.js"></script>
+    <link href="/static/app.css" rel="stylesheet">
+</head>
+<body>
+{{ template "header" . }}
+
+<main>
+    {{ if eq .PageType "index" }}
+    {{ template "index-content" . }}
+    {{ else if eq .PageType "items" }}
+    {{ template "items-content" . }}
+    {{ else }}
+    {{ block "content" . }}{{ end }}
+    {{ end }}
+</main>
+
+<footer>
+    <hr>
+    <small>&copy; 2025 MyApp</small>
+</footer>
+</body>
+</html>
+{{ end }}

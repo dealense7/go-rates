@@ -1,0 +1,35 @@
+/* ─── MEDIUM ───────────────────────────────────────── */
+@font-face {
+    font-family: medium;
+    src: url("fonts/FiraGO-Medium.woff2") format('woff2'),
+    url("fonts/FiraGO-Medium.woff") format('woff');
+}
+
+.font-medium{
+    font-family: medium, 'Noto Serif Georgian', serif;;
+}
+
+/* ─── REGULAR / NORMAL ───────────────────────────────────────── */
+@font-face {
+    font-family: normal;
+    src: url("fonts/FiraGO-Regular.woff2") format('woff2'),
+    url("fonts/FiraGO-Regular.woff") format('woff');
+}
+.font-normal{
+    font-family: normal, 'Noto Serif Georgian', serif;;
+}
+
+
+/* ─── BOLD ───────────────────────────────────────── */
+@font-face {
+    font-family: bold;
+    src: url("fonts/FiraGO-Bold.woff2") format('woff2'),
+    url("fonts/FiraGO-Bold.woff") format('woff');
+}
+.font-bold{
+    font-family: bold, 'Noto Serif Georgian', serif;;
+}
+
+.text-xx{
+    font-size: 11px;
+}

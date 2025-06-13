@@ -10,6 +10,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/oklog/ulid/v2 v2.1.0
 	github.com/spf13/cobra v1.9.1
+	github.com/pressly/goose/v3
 	go.uber.org/fx v1.23.0
 	go.uber.org/zap v1.26.0
 	golang.org/x/text v0.24.0

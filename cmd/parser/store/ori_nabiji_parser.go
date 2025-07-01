@@ -199,9 +199,9 @@ func (g *StoreOrinabiji) transformItems(items *[]Item, data []interface{}, categ
 			BarCode:  m["barCode"].(string),
 			Name:     m["title"].(string),
 			Image:    fmt.Sprintf("https://first.media.2nabiji.ge/api/files/resize/500/500/%v/.webp", imageId),
-			Price:    price,
+			Price:    int64(price),
 			Meta:     &map[string]string{"description": description},
-			OldPrice: oldPrice,
+			OldPrice: int64(oldPrice),
 			Date:     time.Now().String(),
 			Volume:   &volume,
 		})

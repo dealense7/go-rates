@@ -9,12 +9,14 @@ type StoreProvider int
 type StoreCategoryProvider int
 
 const (
-	GOODWILL  StoreProvider = 1
-	CARREFOUR StoreProvider = 2
-	ORINABIJI StoreProvider = 3
-	AGROHUB   StoreProvider = 4
-	SPAR      StoreProvider = 5
-	MAGNITI   StoreProvider = 6
+	GOODWILL    StoreProvider = 1
+	CARREFOUR   StoreProvider = 2
+	ORINABIJI   StoreProvider = 3
+	AGROHUB     StoreProvider = 4
+	Europroduct StoreProvider = 5
+	SPAR        StoreProvider = 6
+	MAGNITI     StoreProvider = 7
+	Fresco      StoreProvider = 8
 )
 
 const (
@@ -25,12 +27,14 @@ const (
 )
 
 var storeNames = map[StoreProvider]string{
-	GOODWILL:  "Goodwill",
-	ORINABIJI: "OriNabiji",
-	CARREFOUR: "Carrefour",
-	AGROHUB:   "AgroHub",
-	SPAR:      "Spar",
-	MAGNITI:   "Magniti",
+	GOODWILL:    "Goodwill",
+	ORINABIJI:   "OriNabiji",
+	CARREFOUR:   "Carrefour",
+	Europroduct: "Europroduct",
+	Fresco:      "Fresco",
+	AGROHUB:     "AgroHub",
+	SPAR:        "Spar",
+	MAGNITI:     "Magniti",
 }
 
 var categoryNames = map[StoreCategoryProvider]string{
@@ -54,12 +58,14 @@ func (p StoreProvider) String() string {
 
 func (p StoreProvider) Logo() string {
 	var imagePath = map[StoreProvider]string{
-		GOODWILL:  "static/img/logos/store/goodwill.webp",
-		ORINABIJI: "static/img/logos/store/orinabiji.webp",
-		CARREFOUR: "static/img/logos/store/goodwill.webp",
-		AGROHUB:   "static/img/logos/store/orinabiji.webp",
-		SPAR:      "static/img/logos/store/orinabiji.webp",
-		MAGNITI:   "static/img/logos/store/magniti.webp",
+		GOODWILL:    "static/img/logos/store/goodwill.webp",
+		ORINABIJI:   "static/img/logos/store/orinabiji.webp",
+		CARREFOUR:   "static/img/logos/store/carrefour.webp",
+		AGROHUB:     "static/img/logos/store/agrohub.webp",
+		Europroduct: "static/img/logos/store/orinabiji.webp",
+		SPAR:        "static/img/logos/store/orinabiji.webp",
+		Fresco:      "static/img/logos/store/orinabiji.webp",
+		MAGNITI:     "static/img/logos/store/magniti.webp",
 	}
 
 	if s, ok := imagePath[p]; ok {

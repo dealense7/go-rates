@@ -29,6 +29,26 @@ func NewStoreAgrohub() *StoreAgrohub {
 	}
 }
 
+func NewStoreEuroproduct() *StoreAgrohub {
+	return &StoreAgrohub{
+		Store: Store{
+			Id:    enum.Europroduct,
+			Name:  "Europroduct",
+			Route: "https://glovoapp.com/ge/en/tbilisi/europroduct-c-tbi/",
+		},
+	}
+}
+
+func NewStoreFresco() *StoreAgrohub {
+	return &StoreAgrohub{
+		Store: Store{
+			Id:    enum.Fresco,
+			Name:  "Fresco",
+			Route: "https://glovoapp.com/ge/en/tbilisi/fresco-tbi/",
+		},
+	}
+}
+
 func NewStoreCarrefour() *StoreCarrefour {
 	return &StoreCarrefour{
 		Store: Store{

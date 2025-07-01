@@ -34,7 +34,12 @@ func (g *Glovo) GetData(route string) ([]Item, error) {
 }
 
 func (g *Glovo) fetchData(items *[]Item, path string) {
-	url := "https://api.glovoapp.com/v3/" + path
+	var url string
+	if strings.HasPrefix(path, "/v4") {
+		url = "https://api.glovoapp.com" + path
+	} else {
+		url = "https://api.glovoapp.com/v3/" + path
+	}
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -91,6 +96,15 @@ func (g *Glovo) transformItems(items *[]Item, data []interface{}) {
 
 		price := int(m["price"].(float64) * 100)
 		oldPrice := 0
+
+		if promotionRaw, ok := m["promotion"]; ok {
+			if promotion, ok := promotionRaw.(map[string]interface{}); ok {
+				if priceVal, ok := promotion["price"].(float64); ok {
+					oldPrice = price
+					price = int(priceVal * 100)
+				}
+			}
+		}
 		if strings.Contains(m["description"].(string), "Old Price/ძველი ფასი") {
 			// Regular expression to find the price (assuming the price is a number with a decimal)
 			re := regexp.MustCompile(`\d+\.\d+`)
@@ -103,6 +117,8 @@ func (g *Glovo) transformItems(items *[]Item, data []interface{}) {
 		}
 
 		barCode := m["externalId"].(string)
+		re := regexp.MustCompile(`\D`) // Matches any non-digit
+		barCode = re.ReplaceAllString(barCode, "")
 
 		allowedBarCodeLengths := map[int]bool{
 			13: true,
@@ -127,8 +143,8 @@ func (g *Glovo) transformItems(items *[]Item, data []interface{}) {
 				BarCode:  barCode,
 				Name:     m["name"].(string),
 				Image:    m["imageUrl"].(string),
-				Price:    price,
-				OldPrice: oldPrice,
+				Price:    int64(price),
+				OldPrice: int64(oldPrice),
 				Date:     time.Now().String(),
 			})
 		}

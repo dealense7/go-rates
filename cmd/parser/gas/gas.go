@@ -11,7 +11,7 @@ import (
 type Item struct {
 	Name  string `json:"name"`
 	Tag   string `json:"tag"`
-	Price int    `json:"price"` // in tetri (₾×100)
+	Price int64  `json:"price"` // in tetri (₾×100)
 	Date  string `json:"date"`  // YYYY-MM-DD
 }
 

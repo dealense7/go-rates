@@ -72,7 +72,7 @@ func (g GasSocar) GetData() ([]Item, error) {
 		results = append(results, Item{
 			Name:  p.FuelNameGeo,
 			Tag:   interesting[p.FuelNameGeo],
-			Price: int(p.FuelUnitPrice * 100),
+			Price: int64(p.FuelUnitPrice * 100),
 			Date:  time.Now().Format("2006-01-02"),
 		})
 	}

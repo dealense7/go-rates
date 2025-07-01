@@ -79,7 +79,7 @@ func (g GasPortal) GetData() ([]Item, error) {
 		results = append(results, Item{
 			Name:  tag.Name,
 			Tag:   tag.Tag,
-			Price: price,
+			Price: int64(price),
 			Date:  time.Now().Format("2006-01-02"),
 		})
 	})

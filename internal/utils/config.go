@@ -7,7 +7,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-type Config struct {
+type DBConfig struct {
 	Username string
 	Password string
 	Host     string
@@ -15,16 +15,32 @@ type Config struct {
 	Database string
 }
 
-func loadEnv() Config {
+type RedisConfig struct {
+	Host string
+	Port string
+}
+
+func LoadDBEnv() DBConfig {
 	if err := godotenv.Load(); err != nil {
 		panic(fmt.Errorf("error loading .env file: %w", err))
 	}
 
-	return Config{
+	return DBConfig{
 		Username: os.Getenv("DB_USER"),
 		Password: os.Getenv("DB_PASS"),
 		Host:     os.Getenv("DB_HOST"),
 		Port:     os.Getenv("DB_PORT"),
 		Database: os.Getenv("DB_NAME"),
+	}
+}
+
+func loadRedisEnv() RedisConfig {
+	if err := godotenv.Load(); err != nil {
+		panic(fmt.Errorf("error loading .env file: %w", err))
+	}
+
+	return RedisConfig{
+		Host: os.Getenv("REDIS_HOST"),
+		Port: os.Getenv("REDIS_PORT"),
 	}
 }

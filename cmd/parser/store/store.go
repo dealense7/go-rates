@@ -1,6 +1,7 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"github.com/dealense7/go-rate-app/internal/interfaces"
 	"github.com/dealense7/go-rate-app/internal/repositories"
 	"github.com/dealense7/go-rate-app/internal/utils"
+	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cobra"
 )
 
@@ -18,8 +20,8 @@ type Item struct {
 	Name     string             `json:"name"`
 	Image    string             `json:"image"`
 	Meta     *map[string]string `json:"meta"`
-	Price    int                `json:"price"`     // in tetri (₾×100)
-	OldPrice int                `json:"old_price"` // in tetri (₾×100)
+	Price    int64              `json:"price"`     // in tetri (₾×100)
+	OldPrice int64              `json:"old_price"` // in tetri (₾×100)
 	Date     string             `json:"date"`      // YYYY-MM-DD
 	Volume   *string            `json:"volume"`
 }
@@ -71,16 +73,20 @@ var storeCmd = &cobra.Command{
 func parseData() {
 	// Init DB Connection
 	db := utils.NewDB()
+	cacheClient := utils.NewCacheClient()
+	pattern := "tag:products:*"
 
 	// Init Repository
 	var repo interfaces.StoreRepository
 	repo = repositories.NewMySQLStoreRepository(db)
 
 	var items = []StoreProvider{
-		NewStoreOrinabiji(),
-		NewStoreGoodwill(),
 		NewStoreCarrefour(),
+		NewStoreGoodwill(),
+		NewStoreOrinabiji(),
 		NewStoreAgrohub(),
+		NewStoreEuroproduct(),
+		NewStoreFresco(),
 		NewStoreMagniti(),
 	}
 
@@ -114,7 +120,6 @@ func parseData() {
 			if !allowedBarCodeLengths[len(item.BarCode)] || item.BarCode == "" {
 				continue
 			}
-			valid++
 
 			var productId int64
 
@@ -143,9 +148,10 @@ func parseData() {
 				fmt.Println("product price not created: ", err.Error())
 				continue
 			}
+			valid++
 		}
 
-		fmt.Println("valid data count: ", len(data))
+		fmt.Println("valid data count: ", valid)
 
 		if err := tx.Commit(); err != nil {
 			fmt.Println("commit error:", err)
@@ -157,5 +163,34 @@ func parseData() {
 		fmt.Println("commit error:", err)
 	}
 
+	err = deleteKeysByPattern(cacheClient, pattern)
+	if err != nil {
+		return
+	}
+
 	fmt.Println("done")
+}
+func deleteKeysByPattern(client *redis.Client, pattern string) error {
+	ctx := context.Background()
+	// Access the underlying redis.Client
+
+	// Create a SCAN iterator for the pattern
+	iter := client.Scan(ctx, 0, pattern, 0).Iterator()
+
+	// Iterate over matching keys
+	for iter.Next(ctx) {
+		key := iter.Val()
+		// Delete the key
+		err := client.Del(ctx, key).Err()
+		if err != nil {
+			return fmt.Errorf("failed to delete key %s: %v", key, err)
+		}
+	}
+
+	// Check for errors during iteration
+	if err := iter.Err(); err != nil {
+		return fmt.Errorf("error during scan: %v", err)
+	}
+
+	return nil
 }

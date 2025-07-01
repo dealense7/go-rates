@@ -8,15 +8,17 @@ import (
 )
 
 type WebHandler struct {
-	gasService   interfaces.GasService
-	storeService interfaces.StoreService
+	gasService      interfaces.GasService
+	storeService    interfaces.StoreService
+	categoryService interfaces.CategoryService
 }
 
-func NewWebHandler(gasService interfaces.GasService, storeService interfaces.StoreService) *WebHandler {
-	return &WebHandler{gasService: gasService, storeService: storeService}
+func NewWebHandler(gasService interfaces.GasService, storeService interfaces.StoreService, categoryService interfaces.CategoryService) *WebHandler {
+	return &WebHandler{gasService: gasService, storeService: storeService, categoryService: categoryService}
 }
 
 func (h *WebHandler) GetProducts(c *gin.Context) {
+	ctx := c.Request.Context()
 
 	// Gas
 	gasRates, err := h.gasService.GetAll()
@@ -27,14 +29,14 @@ func (h *WebHandler) GetProducts(c *gin.Context) {
 	gasRatesJson, _ := json.Marshal(gasRates)
 
 	// Products
-	storeItems, err := h.storeService.GetForSlider()
+	storeItems, err := h.storeService.GetForSlider(ctx)
 	if err != nil {
 		paintError(c, err)
 		return
 	}
 	storeItemsJson, _ := json.Marshal(storeItems)
 
-	categoryItems, err := h.storeService.GetForCategorySlider()
+	categoryItems, err := h.storeService.GetForCategorySlider(ctx)
 	if err != nil {
 		paintError(c, err)
 		return
@@ -51,13 +53,20 @@ func (h *WebHandler) GetProducts(c *gin.Context) {
 }
 
 func (h *WebHandler) GetProductList(c *gin.Context) {
-	offset := 30
+	ctx := c.Request.Context()
 
 	pageUrl := c.Query("page")
-	page, err := strconv.Atoi(pageUrl)
+	categoryId := c.Query("category_id")
+	name := c.Query("search")
+	page, _ := strconv.Atoi(pageUrl)
+	category, _ := strconv.Atoi(categoryId)
+
+	if page == 1 {
+		page = 0
+	}
 
 	// Products
-	Items, err := h.storeService.GetItemsList(offset * page)
+	Items, err := h.storeService.GetItemsList(ctx, page, category, name)
 	if err != nil {
 		paintError(c, err)
 		return
@@ -65,12 +74,22 @@ func (h *WebHandler) GetProductList(c *gin.Context) {
 
 	ItemsJson, _ := json.Marshal(Items)
 
-	totalItems, err := h.storeService.GetItemsCount()
+	totalItems, err := h.storeService.GetItemsCount(ctx, category, name)
+
+	// Categories
+	categories, err := h.categoryService.GetItems()
+	if err != nil {
+		paintError(c, err)
+		return
+	}
+
+	CategoryJson, _ := json.Marshal(categories)
 
 	c.HTML(200, "items", gin.H{
 		"Title":      "Items List",
 		"PageType":   "items",
 		"Items":      string(ItemsJson),
+		"Categories": string(CategoryJson),
 		"totalItems": totalItems,
 	})
 }

@@ -12,7 +12,9 @@ func seedStoreData(db *sqlx.DB) {
 		enum.CARREFOUR,
 		enum.ORINABIJI,
 		enum.AGROHUB,
+		enum.Europroduct,
 		enum.MAGNITI,
+		enum.Fresco,
 	}
 
 	for _, p := range items {

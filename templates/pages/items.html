@@ -32,9 +32,24 @@
     }"
 >
     {{ template "product-price-modal" }}
-    <section>
+    <section class="w-11/12 lg:w-10/12 mx-auto xl:w-8/12 grid grid-cols-10">
+        <div class="col-span-10 grid lg:flex grid-cols-3 md:grid-cols-5 justify-between px-4" x-data="{
+                categories: [],
+                filteredCategories: [],
+                filterData(){
+                    this.filteredCategories = this.categories.filter(item => item)
+                }
+            }"
+             x-init="categories = {{ .Categories }}; filterData();">
+
+            <template x-for="(cat, index) in filteredCategories" :key="cat.id">
+                <div class="col-span-1  my-3">
+                    <a x-text="cat.name" :href="'/items/?category_id=' + cat.id"></a>
+                </div>
+            </template>
+        </div>
         <div
-                class="w-11/12 md:w-8/12 mx-auto px-4 mx-auto grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3"
+                class="w-full col-span-10 px-4 mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
                 x-data="{
                 items: [],
                 filteredItems: [],

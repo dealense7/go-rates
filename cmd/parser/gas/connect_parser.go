@@ -61,7 +61,7 @@ func (g GasConnect) GetData() ([]Item, error) {
 		results = append(results, Item{
 			Name:  name,
 			Tag:   tag,
-			Price: price,
+			Price: int64(price),
 			Date:  time.Now().Format("2006-01-02"),
 		})
 	})

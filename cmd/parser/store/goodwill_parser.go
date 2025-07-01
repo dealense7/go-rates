@@ -152,8 +152,8 @@ func (g *StoreGoodwill) transformItems(items *[]Item, data []interface{}) {
 			BarCode:  m["barCode"].(string),
 			Name:     m["name"].(string),
 			Image:    image.(string),
-			Price:    price,
-			OldPrice: oldPrice,
+			Price:    int64(price),
+			OldPrice: int64(oldPrice),
 			Date:     time.Now().String(),
 		})
 	}

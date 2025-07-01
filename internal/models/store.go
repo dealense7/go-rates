@@ -9,17 +9,17 @@ type Product struct {
 	Meta       json.RawMessage `json:"meta" db:"meta"`
 	Volume     *string         `json:"volume" db:"volume"`
 	Origin     *string         `json:"origin" db:"origin"`
-	CategoryId *int            `json:"category" db:"category_id"`
+	CategoryId *int64          `json:"category" db:"category_id"`
 	Status     bool            `json:"status" db:"status"`
 	CreatedAt  string          `json:"created_at" db:"created_at"`
 }
 
 type ProductPrice struct {
 	ID        string `json:"id" db:"id"`
-	ProductId int    `json:"category" db:"product_id"`
-	StoreId   int    `json:"store_id" db:"store_id"`
-	Price     int    `json:"price" db:"price_id"`
-	OldPrice  int    `json:"old_price" db:"old_price"`
+	ProductId int64  `json:"category" db:"product_id"`
+	StoreId   int64  `json:"store_id" db:"store_id"`
+	Price     int64  `json:"price" db:"price_id"`
+	OldPrice  int64  `json:"old_price" db:"old_price"`
 	Status    bool   `json:"status" db:"status"`
 	CreatedAT string `json:"date" db:"created_at"`
 }

@@ -11,6 +11,6 @@ type Product struct {
 
 type ProductPrice struct {
 	StoreId  int64 `json:"name"`
-	Price    int   `json:"price"`
-	OldPrice int   `json:"old_price"`
+	Price    int64 `json:"price"`
+	OldPrice int64 `json:"old_price"`
 }

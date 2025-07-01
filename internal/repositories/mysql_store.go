@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/json"
@@ -48,12 +49,11 @@ func (r *MySQLStoreRepository) GetProductById(id int) (models.SingleProductItem,
 	if err != nil {
 		return item, err
 	}
-	fmt.Printf("%#v\n", item)
 
 	return item, nil
 }
 
-func (r *MySQLStoreRepository) GetForSlider() ([]models.ProductItem, error) {
+func (r *MySQLStoreRepository) GetForSlider(ctx context.Context) ([]models.ProductItem, error) {
 	var items []models.ProductItem
 
 	query := `WITH interesting_products AS (SELECT product_id
@@ -91,26 +91,51 @@ func (r *MySQLStoreRepository) GetForSlider() ([]models.ProductItem, error) {
 	return items, nil
 }
 
-func (r *MySQLStoreRepository) GetItemsList(offset int) ([]models.ProductItem, error) {
+func (r *MySQLStoreRepository) GetItemsList(ctx context.Context, page int, category int, name string) ([]models.ProductItem, error) {
 	var items []models.ProductItem
+	offset := 30
 
+	// Base query
 	query := `SELECT sp.id,
-				   sp.name_ka     AS name,
-				   sp.company,
-				   sp.image_url,
-				   sp.volume,
-				   sp.origin,
-				   MIN(spp.price) AS min_price,
-				   MAX(spp.price) AS max_price
-			FROM store_products AS sp
-					 JOIN store_product_prices AS spp
-						  ON spp.product_id = sp.id AND spp.status = true
-			WHERE sp.status = true
-			GROUP BY sp.id, sp.name_ka, sp.company, sp.image_url, sp.volume, sp.origin
-			having count(spp.product_id) > 1
-			order by (max_price - min_price) desc LIMIT 30 OFFSET ?;`
+                     sp.name_ka     AS name,
+                     sp.company,
+                     sp.image_url,
+                     sp.volume,
+                     sp.origin,
+                     MIN(spp.price) AS min_price,
+                     MAX(spp.price) AS max_price
+              FROM store_products AS sp
+                       JOIN store_product_prices AS spp
+                            ON spp.product_id = sp.id AND spp.status = true`
 
-	err := r.db.Select(&items, query, offset)
+	// Parameters for the query
+	params := []interface{}{}
+
+	// Add category join and filter if category > 1
+	if category > 1 {
+		query += ` JOIN golang.categories c ON sp.category_id = c.id
+                   WHERE sp.status = true AND c.parent_id = ?`
+		params = append(params, category)
+	} else {
+		query += ` WHERE sp.status = true`
+	}
+
+	// Add name filter for name_ka OR name_en if provided
+	if name != "" {
+		query += ` AND (sp.name_ka LIKE ? OR sp.name_en LIKE ? OR sp.company LIKE ?)`
+		params = append(params, "%"+name+"%", "%"+name+"%", "%"+name+"%")
+	}
+
+	// Complete the query
+	query += ` GROUP BY sp.id, sp.name_ka, sp.company, sp.image_url, sp.volume, sp.origin
+               HAVING COUNT(spp.product_id) > 1
+               ORDER BY (max_price - min_price) DESC LIMIT 30 OFFSET ?`
+
+	// Append offset parameter
+	params = append(params, offset*page)
+
+	// Execute query
+	err := r.db.Select(&items, query, params...)
 	if err != nil {
 		return nil, err
 	}
@@ -118,26 +143,49 @@ func (r *MySQLStoreRepository) GetItemsList(offset int) ([]models.ProductItem, e
 	return items, nil
 }
 
-func (r *MySQLStoreRepository) GetItemsCount() (int, error) {
+func (r *MySQLStoreRepository) GetItemsCount(ctx context.Context, category int, name string) (int, error) {
 	var count int
 
+	// Base query
 	query := `SELECT COUNT(*)
-				FROM (
-						 SELECT spp.product_id
-						 FROM store_product_prices AS spp
-								  JOIN store_products sp ON sp.id = spp.product_id
-						 WHERE spp.status = true AND sp.status = true
-						 GROUP BY spp.product_id
-						 HAVING COUNT(*) > 1
-					 ) AS sub;
-				;`
+              FROM (
+                  SELECT spp.product_id
+                  FROM store_product_prices AS spp
+                           JOIN store_products sp ON sp.id = spp.product_id`
 
-	err := r.db.Get(&count, query)
+	// Parameters for the query
+	params := []interface{}{}
 
-	return count, err
+	// Add category join and filter if category > 1
+	if category > 1 {
+		query += ` JOIN golang.categories c ON sp.category_id = c.id
+                   WHERE spp.status = true AND sp.status = true AND c.parent_id = ?`
+		params = append(params, category)
+	} else {
+		query += ` WHERE spp.status = true AND sp.status = true`
+	}
+
+	// Add name filter for name_ka OR name_en if provided
+	if name != "" {
+		query += ` AND (sp.name_ka LIKE ? OR sp.name_en LIKE ?)`
+		params = append(params, "%"+name+"%", "%"+name+"%")
+	}
+
+	// Complete the query
+	query += ` GROUP BY spp.product_id
+               HAVING COUNT(*) > 1
+              ) AS sub;`
+
+	// Execute query
+	err := r.db.Get(&count, query, params...)
+	if err != nil {
+		return 0, err
+	}
+
+	return count, nil
 }
 
-func (r *MySQLStoreRepository) GetForCategorySlider() ([]models.CategorySlider, error) {
+func (r *MySQLStoreRepository) GetForCategorySlider(ctx context.Context) ([]models.CategorySlider, error) {
 	var items []models.CategorySlider
 
 	query := `WITH top_categories AS (

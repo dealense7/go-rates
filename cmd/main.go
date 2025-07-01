@@ -22,6 +22,7 @@ func main() {
 			// so we get a *zap.Logger
 			zap.NewDevelopment,
 
+			utils.NewCache,
 			utils.NewDB,
 			NewGinEngine,
 			handlers.NewWebHandler,
@@ -37,13 +38,23 @@ func main() {
 			),
 
 			fx.Annotate(
+				services.NewCategoryService,
+				fx.As(new(interfaces.CategoryService)),
+			),
+
+			fx.Annotate(
 				repositories.NewMySQLGasRepository,
 				fx.As(new(interfaces.GasRepository)),
 			),
 
 			fx.Annotate(
-				repositories.NewMySQLStoreRepository,
+				repositories.NewCacheStoreRepository,
 				fx.As(new(interfaces.StoreRepository)),
+			),
+
+			fx.Annotate(
+				repositories.NewCacheCategoryRepository,
+				fx.As(new(interfaces.CategoryRepository)),
 			),
 		),
 		fx.Invoke(

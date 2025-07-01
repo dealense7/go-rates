@@ -2,10 +2,12 @@ package utils
 
 import (
 	"fmt"
-	"time"
-
+	_ "github.com/eko/gocache/lib/v4/cache"
+	redis_store "github.com/eko/gocache/store/redis/v4"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	"github.com/redis/go-redis/v9"
+	"time"
 )
 
 func NewDB() *sqlx.DB {
@@ -21,8 +23,21 @@ func NewDB() *sqlx.DB {
 	return db
 }
 
+func NewCacheClient() *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr: buildRedisPort(),
+		DB:   0,
+	})
+}
+
+func NewCache() (*redis_store.RedisStore, error) {
+	cache := redis_store.NewRedis(NewCacheClient())
+
+	return cache, nil
+}
+
 func buildDSN() string {
-	var config = loadEnv()
+	var config = LoadDBEnv()
 
 	return fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
 		config.Username,
@@ -30,5 +45,14 @@ func buildDSN() string {
 		config.Host,
 		config.Port,
 		config.Database,
+	)
+}
+
+func buildRedisPort() string {
+	var config = loadRedisEnv()
+
+	return fmt.Sprintf("%s:%s",
+		config.Host,
+		config.Port,
 	)
 }

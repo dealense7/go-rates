@@ -87,9 +87,12 @@ func (c CacheStoreRepository) GetItemsList(ctx context.Context, page int, catego
 }
 
 func (c CacheStoreRepository) GetItemsCount(ctx context.Context, category int, name string) (int, error) {
-	cacheKey := fmt.Sprintf("tag:%s:products-list-items-count-category:%d-name:%v", c.tag, category, name)
+	cacheKey := fmt.Sprintf("tag:%s:products-list-items-count-category:%d", c.tag, category)
 
 	var count int
+	if name != "" {
+		return c.repo.GetItemsCount(ctx, category, name)
+	}
 
 	if val, err := c.cache.Get(ctx, cacheKey); err == nil {
 		if countStr, ok := val.(string); ok {

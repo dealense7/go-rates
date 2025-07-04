@@ -2,9 +2,12 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/dealense7/go-rate-app/internal/interfaces"
 	"github.com/gin-gonic/gin"
+	"os"
 	"strconv"
+	"time"
 )
 
 type WebHandler struct {
@@ -15,6 +18,31 @@ type WebHandler struct {
 
 func NewWebHandler(gasService interfaces.GasService, storeService interfaces.StoreService, categoryService interfaces.CategoryService) *WebHandler {
 	return &WebHandler{gasService: gasService, storeService: storeService, categoryService: categoryService}
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil || !os.IsNotExist(err)
+}
+
+func getDumpPath() string {
+	layout := "2006-01-02"
+
+	path, _ := os.Getwd()
+	basePath := path + "/static/dump/dump-%s.sql"
+
+	// Try today's date
+	today := time.Now().Format(layout)
+	todayPath := fmt.Sprintf(basePath, today)
+
+	if fileExists(todayPath) {
+		return today
+	}
+
+	// Try yesterday's date
+	yesterday := time.Now().AddDate(0, 0, -1).Format(layout)
+
+	return yesterday
 }
 
 func (h *WebHandler) GetProducts(c *gin.Context) {
@@ -46,6 +74,7 @@ func (h *WebHandler) GetProducts(c *gin.Context) {
 	c.HTML(200, "index", gin.H{
 		"Title":         "Products List",
 		"PageType":      "index",
+		"DumpPath":      getDumpPath(),
 		"gasRates":      string(gasRatesJson),
 		"storeItems":    string(storeItemsJson),
 		"categoryItems": string(categoryItemsJson),
@@ -89,6 +118,7 @@ func (h *WebHandler) GetProductList(c *gin.Context) {
 		"Title":      "Items List",
 		"PageType":   "items",
 		"Items":      string(ItemsJson),
+		"DumpPath":   getDumpPath(),
 		"Categories": string(CategoryJson),
 		"totalItems": totalItems,
 	})

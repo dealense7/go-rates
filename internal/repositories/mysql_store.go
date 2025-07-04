@@ -121,7 +121,7 @@ func (r *MySQLStoreRepository) GetItemsList(ctx context.Context, page int, categ
 	}
 
 	// Add name filter for name_ka OR name_en if provided also dont make it to long
-	if name != "" && len(name) < 15 {
+	if name != "" && len(name) < 255 {
 		query += ` AND (LOWER(sp.name_ka) LIKE LOWER(?) OR LOWER(sp.name_en) LIKE LOWER(?) OR LOWER(sp.company) LIKE LOWER(?))`
 		params = append(params, "%"+name+"%", "%"+name+"%", "%"+name+"%")
 	}
@@ -166,7 +166,7 @@ func (r *MySQLStoreRepository) GetItemsCount(ctx context.Context, category int, 
 	}
 
 	// Add name filter for name_ka OR name_en if provided also dont make it to long
-	if name != "" && len(name) < 15 {
+	if name != "" && len(name) < 255 {
 		query += ` AND (LOWER(sp.name_ka) LIKE LOWER(?) OR LOWER(sp.name_en) LIKE LOWER(?) OR LOWER(sp.company) LIKE LOWER(?))`
 		params = append(params, "%"+name+"%", "%"+name+"%", "%"+name+"%")
 	}

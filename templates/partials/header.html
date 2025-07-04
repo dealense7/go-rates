@@ -23,7 +23,7 @@
                             <img class="w-full h-full object-contain" src="/static/img/github.png" alt="logo"/>
                         </div>
                     </a>
-                    <a class="text-3xl font-semibold flex items-center gap-2 leading-none" :href="`/static/dump/dump-${today}.sql`" :download="`dump-${today}.sql`">
+                    <a class="text-3xl font-semibold flex items-center gap-2 leading-none" href="/static/dump/dump-{{.DumpPath}}.sql" :download="`dump-{{.DumpPath}}.sql`">
                         <div class="w-7 h-7 relative">
                             <img class="w-full h-full object-contain" src="/static/img/toast.png" alt="logo"/>
                         </div>

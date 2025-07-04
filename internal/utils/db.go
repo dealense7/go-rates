@@ -24,9 +24,13 @@ func NewDB() *sqlx.DB {
 }
 
 func NewCacheClient() *redis.Client {
+	addr, password := buildRedisPort()
 	return redis.NewClient(&redis.Options{
-		Addr: buildRedisPort(),
-		DB:   0,
+		Addr:         addr,
+		DB:           0,
+		Password:     password,
+		PoolSize:     10,
+		MinIdleConns: 10,
 	})
 }
 
@@ -48,11 +52,11 @@ func buildDSN() string {
 	)
 }
 
-func buildRedisPort() string {
+func buildRedisPort() (string, string) {
 	var config = loadRedisEnv()
 
 	return fmt.Sprintf("%s:%s",
 		config.Host,
 		config.Port,
-	)
+	), config.Password
 }

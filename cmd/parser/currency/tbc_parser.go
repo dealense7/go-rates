@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dealense7/go-rate-app/internal/enum"
+	"io"
+	"log"
 	"net/http"
 )
 
@@ -38,7 +40,12 @@ func (g *TBCParser) GetData() ([]Item, error) {
 		url := g.Route + fmt.Sprintf("?Iso1=%s&Iso2=GEL", currency.String())
 		resp, _ := http.Get(url)
 
-		defer resp.Body.Close()
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(resp.Body)
 
 		var envelope map[string]interface{}
 		if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {

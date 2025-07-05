@@ -48,15 +48,15 @@ func parseData() {
 	//repo = repositories.NewMySQLStoreRepository(db)
 
 	var items = []CurrencyProvider{
-		//NewBogParser(),
-		//NewBasisParser(),
-		//NewCredoParser(),
-		//NewCrystalParser(),
-		//NewKursiParser(),
-		//NewLibertyParser(),
-		//NewRicoParser(),
-		//NewSwissParser(),
-		//NewTBCParser(),
+		NewBogParser(),
+		NewBasisParser(),
+		NewCredoParser(),
+		NewCrystalParser(),
+		NewKursiParser(),
+		NewLibertyParser(),
+		NewRicoParser(),
+		NewSwissParser(),
+		NewTBCParser(),
 		NewTeraParser(),
 	}
 

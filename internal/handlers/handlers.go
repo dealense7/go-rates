@@ -103,7 +103,7 @@ func (h *WebHandler) GetProductList(c *gin.Context) {
 
 	ItemsJson, _ := json.Marshal(Items)
 
-	totalItems, err := h.storeService.GetItemsCount(ctx, category, name)
+	totalItems, _ := h.storeService.GetItemsCount(ctx, category, name)
 
 	// Categories
 	categories, err := h.categoryService.GetItems()

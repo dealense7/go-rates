@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dealense7/go-rate-app/internal/enum"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -36,7 +37,12 @@ func (g *BasisParser) GetData() ([]Item, error) {
 	}
 
 	resp, _ := http.Get(g.Route)
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(resp.Body)
 
 	var envelope []interface{}
 	if err := json.NewDecoder(resp.Body).Decode(&envelope); err != nil {

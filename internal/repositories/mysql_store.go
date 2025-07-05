@@ -45,9 +45,8 @@ func (r *MySQLStoreRepository) GetProductById(id int) (models.SingleProductItem,
 			WHERE sp.id = ?
 			GROUP BY sp.id, sp.name_ka, sp.company, sp.image_url`
 
-	err := r.db.Get(&item, query, id)
-	if err != nil {
-		return item, err
+	if err := r.db.Get(&item, query, id); err != nil {
+		return models.SingleProductItem{}, fmt.Errorf("failed to get product %d: %w", id, err)
 	}
 
 	return item, nil
@@ -56,41 +55,56 @@ func (r *MySQLStoreRepository) GetProductById(id int) (models.SingleProductItem,
 func (r *MySQLStoreRepository) GetForSlider(ctx context.Context) ([]models.ProductItem, error) {
 	var items []models.ProductItem
 
-	query := `WITH interesting_products AS (SELECT product_id
-											  FROM (SELECT product_id
-													FROM store_product_prices
-													JOIN store_products ON store_products.id = product_id and store_products.status = true
-													WHERE store_product_prices.status = true
-													GROUP BY product_id
-													HAVING COUNT(product_id) > 1
-													ORDER BY (MAX(price) - MIN(price)) DESC
-													limit 50
-													) AS top_products
- 											  ORDER BY RAND()
- 											  limit 6
-											  )
-				SELECT sp.id,
-					   sp.name_ka AS name,
-					   sp.company,
-					   sp.image_url,
-					   sp.volume,
-					   sp.origin,
-					   min(spp.price) as min_price,
-					   max(spp.price) as max_price
-				FROM store_products AS sp
-						 JOIN interesting_products ip ON ip.product_id = sp.id
-						 JOIN golang.store_product_prices spp
-							  ON spp.product_id = sp.id AND spp.status = true
-				GROUP BY sp.id LIMIT 18;`
+	const query = `
+		WITH interesting_products AS (
+			SELECT 
+				spp.product_id,
+				MAX(spp.price) - MIN(spp.price) AS price_diff
+			FROM store_product_prices spp
+			JOIN store_products sp 
+				ON sp.id = spp.product_id 
+				AND sp.status = true
+			WHERE spp.status = true
+			GROUP BY spp.product_id
+			HAVING COUNT(*) > 1
+			ORDER BY price_diff DESC
+			LIMIT 50
+		), random_products AS (
+			SELECT product_id
+			FROM interesting_products
+			ORDER BY RAND()
+			LIMIT 6
+		)
+		SELECT 
+			sp.id,
+			sp.name_ka AS name,
+			sp.company,
+			sp.image_url,
+			sp.volume,
+			sp.origin,
+			MIN(spp.price) AS min_price,
+			MAX(spp.price) AS max_price
+		FROM store_products sp
+		JOIN random_products rp 
+			ON rp.product_id = sp.id
+		JOIN store_product_prices spp 
+			ON spp.product_id = sp.id 
+			AND spp.status = true
+		GROUP BY 
+			sp.id, 
+			sp.name_ka, 
+			sp.company, 
+			sp.image_url, 
+			sp.volume, 
+			sp.origin
+		LIMIT 6`
 
-	err := r.db.Select(&items, query)
-	if err != nil {
-		return nil, err
+	if err := r.db.SelectContext(ctx, &items, query); err != nil {
+		return nil, fmt.Errorf("failed to get slider products: %w", err)
 	}
 
 	return items, nil
 }
-
 func (r *MySQLStoreRepository) GetItemsList(ctx context.Context, page int, category int, name string) ([]models.ProductItem, error) {
 	var items []models.ProductItem
 	offset := 30
@@ -188,85 +202,72 @@ func (r *MySQLStoreRepository) GetItemsCount(ctx context.Context, category int, 
 func (r *MySQLStoreRepository) GetForCategorySlider(ctx context.Context) ([]models.CategorySlider, error) {
 	var items []models.CategorySlider
 
-	query := `WITH top_categories AS (
-				SELECT id, name
-				FROM categories
-				WHERE parent_id IS NULL
-				ORDER BY RAND()
-				LIMIT 3
-			),
-				 products_with_prices AS (
-					 SELECT
-						 sp.id,
-						 sp.name_ka AS name,
-						 sp.company,
-						 sp.image_url,
-						 sp.volume,
-						 sp.origin,
-						 spp.price,
-						 sp.category_id,
-						 c.parent_id
-					 FROM store_products sp
-							  JOIN store_product_prices spp
-								   ON sp.id = spp.product_id AND spp.status = TRUE
-							  JOIN categories c
-								   ON sp.category_id = c.id
-					 WHERE sp.status = TRUE
-				 ),
-				 min_max_prices AS (
-					 SELECT
-						 id,
-						 MIN(price) AS min_price,
-						 MAX(price) AS max_price
-					 FROM products_with_prices
-					 GROUP BY id
-				 ),
-				 filtered_products AS (
-					 SELECT
-						 p.id,
-						 p.name,
-						 p.company,
-						 p.image_url,
-						 p.volume,
-						 p.origin,
-						 m.min_price,
-						 m.max_price,
-						 tc.id AS top_category_id,
-						 tc.name AS top_category_name
-					 FROM products_with_prices p
-							  JOIN min_max_prices m ON p.id = m.id
-							  JOIN top_categories tc ON tc.id = p.parent_id
-					 GROUP BY p.id, tc.id, tc.name
-				 ),
-				 ranked_products AS (
-					 SELECT *,
-							ROW_NUMBER() OVER (
-								PARTITION BY top_category_id
-								ORDER BY (max_price - min_price) DESC
-								) AS rn
-					 FROM filtered_products
-				 )
-			SELECT
-				top_category_name as name,
-				JSON_ARRAYAGG(
-						JSON_OBJECT(
-								'id', id,
-								'name', name,
-								'company', company,
-								'image', image_url,
-								'volume', volume,
-								'origin', origin,
-								'min_price', min_price,
-								'max_price', max_price
-						)
-				) AS products
-			FROM ranked_products
-			WHERE rn <= 6
-			GROUP BY top_category_name;`
+	const (
+		topCategories = `
+		WITH top_categories AS (
+			SELECT id, name
+			FROM categories
+			WHERE parent_id IS NULL
+			ORDER BY RAND()
+			LIMIT 3
+		)`
+		products = `,
+		products AS (
+			SELECT 
+				sp.id,
+				sp.name_ka AS name,
+				sp.company,
+				sp.image_url,
+				sp.volume,
+				sp.origin,
+				MIN(spp.price) AS min_price,
+				MAX(spp.price) AS max_price,
+				c.parent_id,
+				ROW_NUMBER() OVER (
+					PARTITION BY c.parent_id
+					ORDER BY (MAX(spp.price) - MIN(spp.price)) DESC
+				) AS rn
+			FROM store_products sp
+			JOIN store_product_prices spp 
+				ON sp.id = spp.product_id 
+				AND spp.status = TRUE
+			JOIN categories c 
+				ON sp.category_id = c.id
+			WHERE sp.status = TRUE
+			GROUP BY 
+				sp.id, 
+				sp.name_ka, 
+				sp.company, 
+				sp.image_url, 
+				sp.volume, 
+				sp.origin, 
+				c.parent_id
+		)`
+		mainQuery = `,
+		SELECT 
+			tc.name AS name,
+			JSON_ARRAYAGG(
+				JSON_OBJECT(
+					'id', p.id,
+					'name', p.name,
+					'company', p.company,
+					'image', p.image_url,
+					'volume', p.volume,
+					'origin', p.origin,
+					'min_price', p.min_price,
+					'max_price', p.max_price
+				)
+			) AS products
+		FROM top_categories tc
+		JOIN products p 
+			ON p.parent_id = tc.id
+		WHERE p.rn <= 6
+		GROUP BY tc.name`
+	)
+	query := topCategories + products + mainQuery
 
-	err := r.db.Select(&items, query)
-	if err != nil {
-		return nil, err
+	if err := r.db.SelectContext(ctx, &items, query); err != nil {
+		return nil, fmt.Errorf("failed to get category slider products: %w", err)
 	}
 
 	return items, nil

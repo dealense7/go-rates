@@ -21,7 +21,7 @@
         <template x-for="item in filteredItems" :key="item.id">
             <div class="col-span-1">
                 <!-- Image and Unit -->
-                <div class="bg-white w-full h-[150px] relative block p-3 cursor-pointer"  x-on:click="fetchPrices(item.id)">
+                <div class="bg-white w-full h-[250px] lg:h-[190px] 2xl:h-[170px] relative block p-3 cursor-pointer"  x-on:click="fetchPrices(item.id)">
                     <img :src="'static/' + item.image" loading="lazy" class="object-contain w-full h-full" />
                     <span
                             x-text="(() => {

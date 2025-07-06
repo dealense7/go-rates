@@ -26,24 +26,26 @@ func NewMySQLStoreRepository(db *sqlx.DB) interfaces.StoreRepository {
 func (r *MySQLStoreRepository) GetProductById(id int) (models.SingleProductItem, error) {
 	var item models.SingleProductItem
 
-	query := `SELECT sp.id,
-				   sp.name_ka AS name,
-				   sp.company,
-				   sp.image_url,
-				   JSON_ARRAYAGG(
-						   JSON_OBJECT(
-								   'id', spp.id,
-								   'date', DATE_FORMAT(spp.created_at, '%Y-%m-%d %H:%i:%s'),
-								   'price', spp.price,
-								   'provider', s.name,
-								   'provider_logo', s.logo_url
-						   )
-				   ) AS prices
-			FROM store_products AS sp
-					 JOIN store_product_prices spp ON sp.id = spp.product_id and spp.status = 1
-					 JOIN store_providers s ON spp.store_id = s.id
-			WHERE sp.id = ?
-			GROUP BY sp.id, sp.name_ka, sp.company, sp.image_url`
+	query := `SELECT * FROM (
+				SELECT sp.id,
+					   sp.name_ka AS name,
+					   sp.company,
+					   sp.image_url,
+					   JSON_ARRAYAGG(
+							   JSON_OBJECT(
+									   'id', spp.id,
+									   'date', DATE_FORMAT(spp.created_at, '%Y-%m-%d %H:%i:%s'),
+									   'price', spp.price,
+									   'provider', s.name,
+									   'provider_logo', s.logo_url
+							   )
+					   ) AS prices
+				FROM store_products AS sp
+						 JOIN store_product_prices spp ON sp.id = spp.product_id and spp.status = 1
+						 JOIN store_providers s ON spp.store_id = s.id
+				WHERE sp.id = ?
+				GROUP BY sp.id, sp.name_ka, sp.company, sp.image_url
+			) AS slider_products`
 
 	if err := r.db.Get(&item, query, id); err != nil {
 		return models.SingleProductItem{}, fmt.Errorf("failed to get product %d: %w", id, err)
@@ -201,68 +203,67 @@ func (r *MySQLStoreRepository) GetItemsCount(ctx context.Context, category int, 
 
 func (r *MySQLStoreRepository) GetForCategorySlider(ctx context.Context) ([]models.CategorySlider, error) {
 	var items []models.CategorySlider
-
 	const (
 		topCategories = `
-		WITH top_categories AS (
-			SELECT id, name
-			FROM categories
-			WHERE parent_id IS NULL
-			ORDER BY RAND()
-			LIMIT 3
-		)`
+	WITH top_categories AS (
+		SELECT id, name
+		FROM categories
+		WHERE parent_id IS NULL
+		ORDER BY RAND()
+		LIMIT 3
+	)`
 		products = `,
-		products AS (
-			SELECT 
-				sp.id,
-				sp.name_ka AS name,
-				sp.company,
-				sp.image_url,
-				sp.volume,
-				sp.origin,
-				MIN(spp.price) AS min_price,
-				MAX(spp.price) AS max_price,
-				c.parent_id,
-				ROW_NUMBER() OVER (
-					PARTITION BY c.parent_id
-					ORDER BY (MAX(spp.price) - MIN(spp.price)) DESC
-				) AS rn
-			FROM store_products sp
-			JOIN store_product_prices spp 
-				ON sp.id = spp.product_id 
-				AND spp.status = TRUE
-			JOIN categories c 
-				ON sp.category_id = c.id
-			WHERE sp.status = TRUE
-			GROUP BY 
-				sp.id, 
-				sp.name_ka, 
-				sp.company, 
-				sp.image_url, 
-				sp.volume, 
-				sp.origin, 
-				c.parent_id
-		)`
-		mainQuery = `,
+	products AS (
 		SELECT 
-			tc.name AS name,
-			JSON_ARRAYAGG(
-				JSON_OBJECT(
-					'id', p.id,
-					'name', p.name,
-					'company', p.company,
-					'image', p.image_url,
-					'volume', p.volume,
-					'origin', p.origin,
-					'min_price', p.min_price,
-					'max_price', p.max_price
-				)
-			) AS products
-		FROM top_categories tc
-		JOIN products p 
-			ON p.parent_id = tc.id
-		WHERE p.rn <= 6
-		GROUP BY tc.name`
+			sp.id,
+			sp.name_ka AS name,
+			sp.company,
+			sp.image_url,
+			sp.volume,
+			sp.origin,
+			MIN(spp.price) AS min_price,
+			MAX(spp.price) AS max_price,
+			c.parent_id,
+			ROW_NUMBER() OVER (
+				PARTITION BY c.parent_id
+				ORDER BY (MAX(spp.price) - MIN(spp.price)) DESC
+			) AS rn
+		FROM store_products sp
+		JOIN store_product_prices spp 
+			ON sp.id = spp.product_id 
+			AND spp.status = TRUE
+		JOIN categories c 
+			ON sp.category_id = c.id
+		WHERE sp.status = TRUE
+		GROUP BY 
+			sp.id, 
+			sp.name_ka, 
+			sp.company, 
+			sp.image_url, 
+			sp.volume, 
+			sp.origin, 
+			c.parent_id
+	)`
+		mainQuery = `
+	SELECT 
+		tc.name AS name,
+		JSON_ARRAYAGG(
+			JSON_OBJECT(
+				'id', p.id,
+				'name', p.name,
+				'company', p.company,
+				'image', p.image_url,
+				'volume', p.volume,
+				'origin', p.origin,
+				'min_price', p.min_price,
+				'max_price', p.max_price
+			)
+		) AS products
+	FROM top_categories tc
+	JOIN products p 
+		ON p.parent_id = tc.id
+	WHERE p.rn <= 6
+	GROUP BY tc.name`
 	)
 	query := topCategories + products + mainQuery
 

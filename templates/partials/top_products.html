@@ -1,14 +1,14 @@
 {{ define "top-products" }}
 <section>
-    <div class="w-11/12 md:w-8/12 mx-auto px-4 mx-auto flex items-center justify-between">
+    <div class="w-11/12 lg:w-10/12 2xl:w-8/12 px-4 mx-auto flex items-center justify-between">
         <div>
             <h2 class="text-xs font-medium">ფასდაკლებული პროდუქტი</h2>
             <p class="text-xx font-normal text-gray-500">ყველაზე დიდი განსხვავება ფასებში</p>
         </div>
-        <a href="/items" class="text-xs font-medium text-gray-800">ყველაზე პროდუქტი</a>
+        <a href="/items" class="text-xs font-medium text-gray-800">ყველა პროდუქტი</a>
     </div>
     <div
-            class="w-11/12 lg:w-10/12 xl:w-8/12 mx-auto px-4 mx-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3"
+            class="w-11/12 lg:w-10/12 2xl:w-8/12 mx-auto px-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3"
             x-data="{
                 items: [],
                 filteredItems: [],

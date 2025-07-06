@@ -85,4 +85,11 @@ func parseData() {
 			}
 		}
 	}
+	// Disable all old records
+	tx := db.MustBegin()
+
+	const query = `UPDATE gas_rates SET status = FALSE WHERE date < CURDATE();`
+	tx.MustExec(query)
+	_ = tx.Commit()
+
 }

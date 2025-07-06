@@ -18,7 +18,7 @@
         x-init="items = {{ . }}; filterData();"
 >
     <div class="">
-        <div class="w-full w-11/12 md:w-8/12  mx-auto p-2 items-center gap-5 grid grid-cols-5">
+        <div class="w-11/12 lg:w-10/12 2xl:w-8/12 mx-auto p-2 items-center gap-5 grid grid-cols-5">
             <div class="flex items-center gap-3">
                 <template x-for="type in types" :key="type">
                     <span x-text="type" x-on:click="chosenType = type; filterData();" :class="type === chosenType  ? 'bg-gray-700 text-white' : ''" class="hover:bg-gray-700 duration-100 transition-colors hover:text-white cursor-pointer border p-1 px-3 font-normal rounded-md text-xx text-center w-max"></span>

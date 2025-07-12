@@ -8,7 +8,7 @@
         <a href="/items" class="text-xs font-medium text-gray-800">ყველა პროდუქტი</a>
     </div>
     <div
-            class="w-11/12 lg:w-10/12 2xl:w-8/12 mx-auto px-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3"
+            class="w-11/12 lg:w-10/12 2xl:w-8/12 mx-auto px-4 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3"
             x-data="{
                 items: [],
                 filteredItems: [],
@@ -19,81 +19,56 @@
             x-init="items = {{ . }}; filterData();">
 
         <template x-for="item in filteredItems" :key="item.id">
-            <div class="col-span-1">
-                <!-- Image and Unit -->
-                <div class="bg-white w-full h-[250px] lg:h-[190px] 2xl:h-[170px] relative block p-3 cursor-pointer"  x-on:click="fetchPrices(item.id)">
+            <div class="col-span-1" x-on:click="fetchPrices(item.id)">
+                <!-- Image -->
+                <div class="w-full !h-[175px] bg-white w-full relative cursor-pointer">
                     <img :src="'static/' + item.image" loading="lazy" class="object-contain w-full h-full" />
-                    <span
-                            x-text="(() => {
-                              const vol = item.volume.trim();
-                              const num = parseFloat(vol.replace(/[a-zA-Zა-ჰ]+/, '').trim());
-                              if (vol.includes('ml')) {
-                                return num >= 1000 ? (num / 1000).toFixed(2) + ' ლ' : num + ' მლ';
-                              }
-                              if (vol.includes('g')) {
-                                return num >= 1000 ? (num / 1000).toFixed(2) + ' კგ' : num + ' გრ';
-                              }
-                              if (vol.includes('pcs')) {
-                                return num + 'x';
-                              }
-                              return vol;
-                            })()"
-                            :class="(() => {
-                              const vol = item.volume.trim();
-                              if (vol.includes('ml')) return 'bg-green-600 text-white';
-                              if (vol.includes('g')) return 'bg-gray-700 text-white';
-                              if (vol.includes('pcs')) return 'bg-gray-700 text-white';
-                              return '';
-                            })()"
-                            class="px-1 py-0.5 text-xx absolute top-1.5 right-1.5 font-normal rounded"
-                    ></span>
                 </div>
-
-                <!-- Name And Price [START] -->
-                <div class="w-full my-2 cursor-pointer"  x-on:click="fetchPrices(item.id)">
-                    <!-- Product and Company Name [START] -->
-                    <span x-text="item.company" class="text-xx mb-0.5 overflow-hidden text-ellipsis line-clamp-1 font-medium text-gray-500"></span>
-                    <span x-text="item.name" class="text-xs overflow-hidden text-ellipsis line-clamp-1 font-normal text-gray-800"></span>
-                    <!-- Product and Company Name [END] -->
-
-                    <div class="flex items-center justify-between mt-1">
-                        <!-- Min.Max Price [START] -->
-                        <div>
-                            <!-- Min price -->
-                            <span x-text="(item.min_price/100).toFixed(2)" class="text-base font-bold text-gray-900"></span>
-
-                            <!-- Max price if exists -->
-                            <template x-if="(item.max_price - item.min_price) > 0.01">
-                                <span x-text="(item.max_price/100).toFixed(2)" class="text-sm font-normal text-gray-700 line-through"></span>
-                            </template>
-                        </div>
-
-                        <!-- Min.Max Price [END] -->
-
-                        <!-- Sale [START] -->
-                        <template x-if="(item.max_price - item.min_price) > 0.01">
-                            <span
-                                    x-text="(((item.max_price - item.min_price) / item.max_price) * 100).toFixed(0) + '%'"
-                                    :class="() => {
-                                      const percentage = ((item.max_price - item.min_price) / item.max_price) * 100;
-
-                                      if (percentage > 70) {
-                                        return 'text-red-600 font-medium';
-                                      } else if (percentage > 50) {
-                                        return 'text-green-600 font-medium';
-                                      } else {
-                                        return 'text-gray-700 font-normal';
-                                      }
-                                    }"
-                                    class="text-xs font-normal"
-                            ></span>
-
-                        </template>
-                        <!-- Sale [END] -->
-                    </div>
+                <!-- Volume -->
+                <span
+                   x-text="(() => {
+                    const vol = item.volume.trim();
+                    const num = parseFloat(vol.replace(/[a-zA-Zა-ჰ]+/, ''));
+                    if (vol.includes('ml')) return num >= 1000 ? (num / 1000).toFixed(2) + ' ლ' : num + ' მლ';
+                    if (vol.includes('g')) return num >= 1000 ? (num / 1000).toFixed(2) + ' კგ' : num + ' გ';
+                    if (vol.includes('pcs')) return num + 'x';
+                    return vol;
+                   })()"
+                   :class="(() => {
+                    const vol = item.volume.trim();
+                    return vol.includes('ml') ? 'bg-green-600 text-white' : vol.includes('g') || vol.includes('pcs') ? 'bg-gray-700 text-white' : '';
+                   })()"
+                   class="px-1 py-0.5 text-xx cursor-pointer font-normal rounded"
+                ></span>
+                <div class="cursor-pointer">
+                    <!-- Brand Name -->
+                    <h4 class="text-xs font-bold mt-2 text-gray-700" x-text="item.company"></h4>
+                    <!-- Product Name -->
+                    <h2 class="text-xs overflow-hidden text-ellipsis text-gray-900 line-clamp-1 mt-1 font-normal text-gray-800" x-text="item.name"></h2>
+                    <!-- Product Name -->
+                    <span x-text="(item.min_price/100).toFixed(2)" class="text-base mt-1 font-bold text-gray-900"></span>
+                    <template x-if="(item.max_price - item.min_price) > 0.01">
+                        <span x-text="(item.max_price/100).toFixed(2)" class="text-sm font-normal text-gray-700 line-through"></span>
+                    </template>
+                    <template x-if="item.volume.includes('g') || item.volume.includes('mg')  || item.volume.includes('ml') || item.volume.includes('pcs')">
+                        <span
+                                x-text="(() => {
+                                    const vol = item.volume.trim();
+                                    const num = parseFloat(vol.replace(/[a-zA-Zა-ჰ]+/, '')) || 0;
+                                    if (num === 0) return '';
+                                    if (vol.includes('pcs')) return (item.min_price / 100 / num).toFixed(2) + ' ₾ / ცალი';
+                                    if (vol.includes('g') || vol.includes('mg')) {
+                                        return (((item.min_price/100)/num) * 100).toFixed(2) + ' ₾ / 100გ';
+                                    }
+                                    if (vol.includes('ml')) {
+                                        return (((item.min_price/100)/num) * 100).toFixed(2) + ' ₾ / 100მლ';
+                                    }
+                                    return 's';
+                                })()"
+                                class="text-xs font-normal text-gray-600 block mt-1"
+                        ></span>
+                    </template>
                 </div>
-                <!-- Name And Price [END] -->
-
             </div>
         </template>
     </div>

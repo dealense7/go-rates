@@ -58,48 +58,29 @@ func (r *MySQLStoreRepository) GetForSlider(ctx context.Context) ([]models.Produ
 	var items []models.ProductItem
 
 	const query = `
-		WITH interesting_products AS (
-			SELECT 
-				spp.product_id,
-				MAX(spp.price) - MIN(spp.price) AS price_diff
+		WITH top_price_diff AS (
+			SELECT product_id, MAX(price) - MIN(price) AS price_diff
 			FROM store_product_prices spp
-			JOIN store_products sp 
-				ON sp.id = spp.product_id 
-				AND sp.status = true
-			WHERE spp.status = true
-			GROUP BY spp.product_id
+					 JOIN store_products sp ON sp.id = spp.product_id
+			WHERE spp.status = true AND sp.status = true
+			GROUP BY product_id
 			HAVING COUNT(*) > 1
 			ORDER BY price_diff DESC
 			LIMIT 50
-		), random_products AS (
-			SELECT product_id
-			FROM interesting_products
-			ORDER BY RAND()
-			LIMIT 6
-		)
-		SELECT 
-			sp.id,
-			sp.name_ka AS name,
-			sp.company,
-			sp.image_url,
-			sp.volume,
-			sp.origin,
-			MIN(spp.price) AS min_price,
-			MAX(spp.price) AS max_price
+		),
+			 random_five AS (
+				 SELECT product_id
+				 FROM top_price_diff
+				 ORDER BY RAND()
+				 LIMIT 5
+			 )
+		SELECT sp.id, sp.name_ka AS name, sp.company, sp.image_url, sp.volume, sp.origin,
+			   MIN(spp.price) AS min_price, MAX(spp.price) AS max_price
 		FROM store_products sp
-		JOIN random_products rp 
-			ON rp.product_id = sp.id
-		JOIN store_product_prices spp 
-			ON spp.product_id = sp.id 
-			AND spp.status = true
-		GROUP BY 
-			sp.id, 
-			sp.name_ka, 
-			sp.company, 
-			sp.image_url, 
-			sp.volume, 
-			sp.origin
-		LIMIT 6`
+				 JOIN random_five rf ON rf.product_id = sp.id
+				 JOIN store_product_prices spp ON spp.product_id = sp.id AND spp.status = true
+		GROUP BY sp.id, sp.name_ka, sp.company, sp.image_url, sp.volume, sp.origin
+		LIMIT 5;`
 
 	if err := r.db.SelectContext(ctx, &items, query); err != nil {
 		return nil, fmt.Errorf("failed to get slider products: %w", err)
@@ -130,15 +111,16 @@ func (r *MySQLStoreRepository) GetItemsList(ctx context.Context, page int, categ
 	// Add category join and filter if category > 1
 	if category > 1 {
 		query += ` JOIN golang.categories c ON sp.category_id = c.id
-                   WHERE sp.status = true AND c.parent_id = ?`
+                   WHERE spp.status = true AND sp.status = true AND c.parent_id = ?`
 		params = append(params, category)
 	} else {
-		query += ` WHERE sp.status = true`
+		query += ` WHERE spp.status = true AND sp.status = true`
+
 	}
 
 	// Add name filter for name_ka OR name_en if provided also dont make it to long
 	if name != "" && len(name) < 255 {
-		query += ` AND (LOWER(sp.name_ka) LIKE LOWER(?) OR LOWER(sp.name_en) LIKE LOWER(?) OR LOWER(sp.company) LIKE LOWER(?))`
+		query += ` AND (sp.name_ka LIKE ? OR sp.name_en LIKE ? OR sp.company LIKE ?)`
 		params = append(params, "%"+name+"%", "%"+name+"%", "%"+name+"%")
 	}
 
@@ -148,7 +130,7 @@ func (r *MySQLStoreRepository) GetItemsList(ctx context.Context, page int, categ
                ORDER BY (max_price - min_price) DESC LIMIT 30 OFFSET ?`
 
 	// Append offset parameter
-	params = append(params, offset*page)
+	params = append(params, offset*page-30)
 
 	// Execute query
 	err := r.db.Select(&items, query, params...)
@@ -183,7 +165,7 @@ func (r *MySQLStoreRepository) GetItemsCount(ctx context.Context, category int, 
 
 	// Add name filter for name_ka OR name_en if provided also dont make it to long
 	if name != "" && len(name) < 255 {
-		query += ` AND (LOWER(sp.name_ka) LIKE LOWER(?) OR LOWER(sp.name_en) LIKE LOWER(?) OR LOWER(sp.company) LIKE LOWER(?))`
+		query += ` AND (sp.name_ka LIKE ? OR sp.name_en LIKE ? OR sp.company LIKE ?)`
 		params = append(params, "%"+name+"%", "%"+name+"%", "%"+name+"%")
 	}
 
@@ -262,7 +244,7 @@ func (r *MySQLStoreRepository) GetForCategorySlider(ctx context.Context) ([]mode
 	FROM top_categories tc
 	JOIN products p 
 		ON p.parent_id = tc.id
-	WHERE p.rn <= 6
+	WHERE p.rn <= 5
 	GROUP BY tc.name`
 	)
 	query := topCategories + products + mainQuery

@@ -90,8 +90,8 @@ func (h *WebHandler) GetProductList(c *gin.Context) {
 	page, _ := strconv.Atoi(pageUrl)
 	category, _ := strconv.Atoi(categoryId)
 
-	if page == 1 {
-		page = 0
+	if page == 0 {
+		page = 1
 	}
 
 	// Products

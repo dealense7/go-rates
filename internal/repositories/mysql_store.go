@@ -7,12 +7,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
+
 	dto "github.com/dealense7/go-rate-app/internal/DTO"
 	"github.com/dealense7/go-rate-app/internal/interfaces"
 	"github.com/dealense7/go-rate-app/internal/models"
 	"github.com/jmoiron/sqlx"
 	"github.com/oklog/ulid/v2"
-	"time"
 )
 
 type MySQLStoreRepository struct {
@@ -110,7 +111,7 @@ func (r *MySQLStoreRepository) GetItemsList(ctx context.Context, page int, categ
 
 	// Add category join and filter if category > 1
 	if category > 1 {
-		query += ` JOIN golang.categories c ON sp.category_id = c.id
+		query += ` JOIN categories c ON sp.category_id = c.id
                    WHERE spp.status = true AND sp.status = true AND c.parent_id = ?`
 		params = append(params, category)
 	} else {
@@ -156,7 +157,7 @@ func (r *MySQLStoreRepository) GetItemsCount(ctx context.Context, category int, 
 
 	// Add category join and filter if category > 1
 	if category > 1 {
-		query += ` JOIN golang.categories c ON sp.category_id = c.id
+		query += ` JOIN categories c ON sp.category_id = c.id
                    WHERE spp.status = true AND sp.status = true AND c.parent_id = ?`
 		params = append(params, category)
 	} else {

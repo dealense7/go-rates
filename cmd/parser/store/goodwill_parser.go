@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/dealense7/go-rate-app/internal/enum"
 	"io"
 	"net/http"
 	"regexp"
@@ -14,16 +13,6 @@ import (
 
 type StoreGoodwill struct {
 	Store
-}
-
-func NewStoreGoodwill() *StoreGoodwill {
-	return &StoreGoodwill{
-		Store: Store{
-			Id:    enum.GOODWILL,
-			Name:  "Goodwill",
-			Route: "https://api.goodwill.ge/v1/Products/v3?ShopId=1&Page=%d&Limit=%d",
-		},
-	}
 }
 
 // GetData fetches the first 50 products and returns them.
@@ -94,7 +83,6 @@ func (g *StoreGoodwill) getToken() (string, error) {
 	return match[1], nil
 }
 
-// getProducts performs the authenticated GET and checks status.
 func (g *StoreGoodwill) getProducts(url, token string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
@@ -136,22 +124,20 @@ func (g *StoreGoodwill) transformItems(items *[]Item, data []interface{}) {
 			continue
 		}
 
+		if m["imageUrl"] == nil {
+			continue
+		}
+
 		price := int(m["price"].(float64) * 100)
 		oldPrice := 0
 		if f, ok := m["previousPrice"].(float64); ok {
 			oldPrice = int(f * 100)
 		}
 
-		image := m["imageUrl"]
-
-		if image == nil {
-			continue
-		}
-
 		*items = append(*items, Item{
 			BarCode:  m["barCode"].(string),
 			Name:     m["name"].(string),
-			Image:    image.(string),
+			Image:    m["imageUrl"].(string),
 			Price:    int64(price),
 			OldPrice: int64(oldPrice),
 			Date:     time.Now().String(),

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	url2 "net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -92,8 +91,22 @@ func (g *Glovo) transformItems(items *[]Item, data []interface{}) {
 		if !ok {
 			continue
 		}
+
+		// Map to interface
 		m = m["data"].(map[string]interface{})
 
+		// if item has no image we don't need that
+		if m["imageUrl"] == nil {
+			continue
+		}
+
+		// Check for barcode
+		barCode := getBarCode(m)
+		if barCode == "" {
+			continue
+		}
+
+		// Get  current price without deal
 		price := int(m["price"].(float64) * 100)
 		oldPrice := 0
 
@@ -105,49 +118,20 @@ func (g *Glovo) transformItems(items *[]Item, data []interface{}) {
 				}
 			}
 		}
-		if strings.Contains(m["description"].(string), "Old Price/ძველი ფასი") {
-			// Regular expression to find the price (assuming the price is a number with a decimal)
-			re := regexp.MustCompile(`\d+\.\d+`)
 
-			// Find the price in the description
-			oldPriceDesc := re.FindString(m["description"].(string))
-			floatVal, _ := strconv.ParseFloat(oldPriceDesc, 64)
-
-			oldPrice = int(floatVal * 100)
-		}
-
-		barCode := m["externalId"].(string)
-		re := regexp.MustCompile(`\D`) // Matches any non-digit
-		barCode = re.ReplaceAllString(barCode, "")
-
-		allowedBarCodeLengths := map[int]bool{
-			13: true,
-			12: true,
-			8:  true,
-		}
-		if !allowedBarCodeLengths[len(barCode)] {
-			re := regexp.MustCompile(`(?:^|\D)(\d{8}|\d{12}|\d{13})(?:\D|$)`)
-
-			match := re.FindStringSubmatch(m["name"].(string))
-			if len(match) >= 2 {
-				barCode = match[1]
-			}
-		}
-
+		// check for error :)
 		if oldPrice < price {
 			oldPrice = 0
 		}
 
-		if m["imageUrl"] != nil {
-			*items = append(*items, Item{
-				BarCode:  barCode,
-				Name:     m["name"].(string),
-				Image:    m["imageUrl"].(string),
-				Price:    int64(price),
-				OldPrice: int64(oldPrice),
-				Date:     time.Now().String(),
-			})
-		}
+		*items = append(*items, Item{
+			BarCode:  barCode,
+			Name:     m["name"].(string),
+			Image:    m["imageUrl"].(string),
+			Price:    int64(price),
+			OldPrice: int64(oldPrice),
+			Date:     time.Now().String(),
+		})
 	}
 }
 
@@ -168,6 +152,7 @@ func (g *Glovo) GetLinks(url string) []string {
 		req.Header.Set("Accept-Language", "en-GB,en;q=0.9")
 		req.Header.Set("Cache-Control", "no-cache")
 		req.Header.Set("Pragma", "no-cache")
+		req.Header.Set("rsc", "1")
 
 		// Set cookies (important for location-based content)
 
@@ -230,4 +215,56 @@ func getLocations() []string {
 	emptyAddresscookieValue := "glovo_user_lang=en; glovo_last_visited_city=TBI; glovo_delivery_address="
 
 	return []string{cookieValue, emptyAddresscookieValue}
+}
+
+func getBarCode(m map[string]interface{}) string {
+	// Maybe externalId is the barcode
+	barCode := m["externalId"].(string)
+
+	// Remove all non-digit characters
+	re := regexp.MustCompile(`\D`)
+	barCode = re.ReplaceAllString(barCode, "")
+
+	if !validateBarcode(barCode) {
+		// Maybe barcode is in the name
+		barCode = getBarcodeFromText(m["name"].(string))
+		barCode = re.ReplaceAllString(barCode, "")
+
+		if !validateBarcode(barCode) {
+			// Maybe barcode is in the image URL
+			barCode = getBarcodeFromText(m["imageUrl"].(string))
+			barCode = re.ReplaceAllString(barCode, "")
+
+			if !validateBarcode(barCode) {
+				return ""
+			}
+		}
+	}
+
+	return barCode
+}
+
+func validateBarcode(barCode string) bool {
+	allowedBarCodeLengths := map[int]bool{
+		13: true,
+		12: true,
+		8:  true,
+	}
+
+	if !allowedBarCodeLengths[len(barCode)] {
+		return false
+	}
+
+	return true
+}
+
+func getBarcodeFromText(text string) string {
+	re := regexp.MustCompile(`(?:^|\D)(\d{8}|\d{12}|\d{13})(?:\D|$)`)
+
+	match := re.FindStringSubmatch(text)
+	if len(match) >= 2 {
+		return match[1]
+	}
+
+	return ""
 }

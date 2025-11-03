@@ -4,23 +4,13 @@ import (
 	"github.com/dealense7/go-rate-app/internal/enum"
 )
 
-type StoreAgrohub struct {
+type StoreItem struct {
 	Glovo
 	Store
 }
 
-type StoreCarrefour struct {
-	Glovo
-	Store
-}
-
-type StoreMagniti struct {
-	Glovo
-	Store
-}
-
-func NewStoreAgrohub() *StoreAgrohub {
-	return &StoreAgrohub{
+func NewStoreAgrohub() *StoreItem {
+	return &StoreItem{
 		Store: Store{
 			Id:    enum.AGROHUB,
 			Name:  "Agrohub",
@@ -29,8 +19,8 @@ func NewStoreAgrohub() *StoreAgrohub {
 	}
 }
 
-func NewStoreEuroproduct() *StoreAgrohub {
-	return &StoreAgrohub{
+func NewStoreEuroproduct() *StoreItem {
+	return &StoreItem{
 		Store: Store{
 			Id:    enum.Europroduct,
 			Name:  "Europroduct",
@@ -39,8 +29,8 @@ func NewStoreEuroproduct() *StoreAgrohub {
 	}
 }
 
-func NewStoreFresco() *StoreAgrohub {
-	return &StoreAgrohub{
+func NewStoreFresco() *StoreItem {
+	return &StoreItem{
 		Store: Store{
 			Id:    enum.Fresco,
 			Name:  "Fresco",
@@ -49,8 +39,8 @@ func NewStoreFresco() *StoreAgrohub {
 	}
 }
 
-func NewStoreCarrefour() *StoreCarrefour {
-	return &StoreCarrefour{
+func NewStoreCarrefour() *StoreItem {
+	return &StoreItem{
 		Store: Store{
 			Id:    enum.CARREFOUR,
 			Name:  "Carrefour",
@@ -59,8 +49,18 @@ func NewStoreCarrefour() *StoreCarrefour {
 	}
 }
 
-func NewStoreMagniti() *StoreMagniti {
-	return &StoreMagniti{
+func NewStoreGoodwill() *StoreGoodwill {
+	return &StoreGoodwill{
+		Store: Store{
+			Id:    enum.GOODWILL,
+			Name:  "Goodwill",
+			Route: "https://api.goodwill.ge/v1/Products/v3?ShopId=1&Page=%d&Limit=%d",
+		},
+	}
+}
+
+func NewStoreMagniti() *StoreItem {
+	return &StoreItem{
 		Store: Store{
 			Id:    enum.MAGNITI,
 			Name:  "Magniti",

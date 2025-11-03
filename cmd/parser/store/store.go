@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
 	"github.com/dealense7/go-rate-app/cmd/parser/root"
 	dto "github.com/dealense7/go-rate-app/internal/DTO"
 	"github.com/dealense7/go-rate-app/internal/enum"
@@ -76,7 +77,7 @@ var storeCmd = &cobra.Command{
 	Use:   "store",
 	Short: "Parse a store prices",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		fmt.Println("parsing store data")
+		fmt.Println("Initialization")
 		parseData()
 		return nil
 	},
@@ -86,15 +87,16 @@ var storeCmd = &cobra.Command{
 func parseData() {
 	// Initialize database and Redis connections
 	db := utils.NewDB()
-	cacheClient := utils.NewCacheClient()
-	pattern := "tag:products:*" // Redis key pattern for product cache
+
+	// Clear Redis cache for product data
+	deleteKeysByPattern(utils.NewCacheClient(), "tag:products:*")
 
 	// Initialize repository for database operations
 	var repo interfaces.StoreRepository
 	repo = repositories.NewMySQLStoreRepository(db)
 
 	// List of stores to process
-	var items = []StoreProvider{
+	var stores = []StoreProvider{
 		NewStoreCarrefour(),
 		NewStoreGoodwill(),
 		NewStoreOrinabiji(),
@@ -105,15 +107,11 @@ func parseData() {
 	}
 
 	// Define valid barcode lengths (EAN-13, UPC-A, EAN-8)
-	allowedBarCodeLengths := map[int]bool{
-		13: true, // EAN-13
-		12: true, // UPC-A
-		8:  true, // EAN-8
-	}
+	allowedBarCodeLengths := getAllowerBarCodes()
 
 	// Process each store
-	for _, val := range items {
-		fmt.Println("parsing data for", val.GetName())
+	for _, val := range stores {
+		fmt.Println("Store: ", val.GetName())
 
 		// Fetch product data from the store
 		data, err := val.GetData(val.GetRoute())
@@ -198,17 +196,10 @@ func parseData() {
 		fmt.Println("commit error:", err)
 	}
 
-	// Clear Redis cache for product data
-	err = deleteKeysByPattern(cacheClient, pattern)
-	if err != nil {
-		fmt.Println("cache clear error:", err)
-	}
-
 	fmt.Println("done")
 }
 
-// deleteKeysByPattern removes Redis keys matching the given pattern.
-func deleteKeysByPattern(client *redis.Client, pattern string) error {
+func deleteKeysByPattern(client *redis.Client, pattern string) {
 	ctx := context.Background()
 	// Create a SCAN iterator for the pattern
 	iter := client.Scan(ctx, 0, pattern, 0).Iterator()
@@ -218,14 +209,20 @@ func deleteKeysByPattern(client *redis.Client, pattern string) error {
 		key := iter.Val()
 		err := client.Del(ctx, key).Err()
 		if err != nil {
-			return fmt.Errorf("failed to delete key %s: %v", key, err)
+			fmt.Printf("Failed to delete key %s: %v \n", key, err)
 		}
 	}
 
 	// Check for errors during iteration
 	if err := iter.Err(); err != nil {
-		return fmt.Errorf("error during scan: %v", err)
+		fmt.Printf("Error during scan: %v \n", err)
 	}
+}
 
-	return nil
+func getAllowerBarCodes() map[int]bool {
+	return map[int]bool{
+		13: true, // EAN-13
+		12: true, // UPC-A
+		8:  true, // EAN-8
+	}
 }

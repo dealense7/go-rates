@@ -102,7 +102,7 @@ func NewHTTPServer(lc fx.Lifecycle, router *gin.Engine, logger *zap.Logger) {
 
 // RegisterRoutes binds your HTTP endpoints to the WebHandler.
 func RegisterRoutes(router *gin.Engine, h *handlers.WebHandler) {
-	router.GET("/", h.GetProducts)
+	router.GET("/", h.GetProductList)
 	router.GET("/items", h.GetProductList)
 	router.GET("/prices/:id", h.GetProductPrices)
 
